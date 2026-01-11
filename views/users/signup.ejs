@@ -1,0 +1,41 @@
+<% layout("/layouts/boilerplate.ejs") %>
+
+    <div class="min-vh-100 d-flex justify-content-center align-items-center">
+        <div class="card shadow p-4" style="max-width: 460px; width: 100%;">
+            <a href="/listings" class="text-muted small mb-3 d-inline-block">
+                ← Back to Home
+            </a>
+            <h4 class="fw-bold mb-1">Create Account</h4>
+            <p class="text-muted small mb-4">Find your stay with Cozio.</p>
+
+            <form action="/signup" method="POST" class="needs-validation" novalidate>
+
+                <div class="mb-3">
+                    <label for="username" class="form-label small">User Name</label>
+                    <input type="text" class="form-control" name="username" id="username" placeholder="xmen01" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="email" class="form-label small">Email</label>
+                    <input type="email" class="form-control" name="email" id="email" placeholder="you@example.com"
+                        required>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label small" for="password">Password</label>
+                    <input type="password" class="form-control" name="password" id="password" placeholder="••••••••"
+                        required>
+                </div>
+
+                <button class="btn btn-primary w-100 mb-3">
+                    Sign Up
+                </button>
+
+                <p class="text-center small text-muted m-0">
+                    Already have an account?
+                    <a href="/login" class="fw-semibold text-decoration-none">Login</a>
+                </p>
+
+            </form>
+        </div>
+    </div>
