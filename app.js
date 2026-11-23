@@ -22,6 +22,15 @@ const UserRoutes = require("./routes/user");
 
 const dbUrl = process.env.DB_URL;
 
+// Fail fast with a clear message if the DB connection string is missing.
+// (On Render this must be set under Dashboard -> Environment.)
+if (!dbUrl) {
+  console.error(
+    "FATAL: DB_URL environment variable is not set. Set it on Render to your MongoDB Atlas connection string."
+  );
+  process.exit(1);
+}
+
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
@@ -31,9 +40,7 @@ app.set("views", path.join(__dirname, "views"));
 
 const store = new mongoStore({
   mongoUrl: dbUrl,
-  crypto: {
-    secret: process.env.SECRET,
-  },
+  ...(process.env.SECRET ? { crypto: { secret: process.env.SECRET } } : {}),
   touchAfter: 48 * 3600,
 });
 
@@ -43,7 +50,7 @@ store.on("error", (err) => {
 
 const sessionOptions = {
   store,
-  secret: "secretkey_x",
+  secret: process.env.SECRET || "secretkey_x",
   resave: false,
   saveUninitialized: true,
   cookie: {
@@ -52,10 +59,6 @@ const sessionOptions = {
   },
   httpOnly: true,
 };
-
-
-
-
 
 app.use(session(sessionOptions));
 app.use(flash());
@@ -67,10 +70,13 @@ passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
 Main()
-  .then((res) => {
+  .then(() => {
     console.log("connected");
   })
-  .catch((err) => console.log("Err_Occured", err));
+  .catch((err) => {
+    console.error("FATAL: Could not connect to MongoDB:", err.message);
+    process.exit(1);
+  });
 
 async function Main() {
   await mongoose.connect(dbUrl);
@@ -83,16 +89,18 @@ app.use((req, res, next) => {
   next();
 });
 
+// Health check for Render / UptimeRobot - no DB needed
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
+
 app.get("/", (req, res) => {
   res.render("home.ejs");
 });
 
-
 app.use("/listings", listingsRoutes);
 app.use("/listings/:id/reviews", reviewsRoutes);
 app.use("/", UserRoutes);
-
-
 
 // 404 ROUTE HANDLER
 app.all(/(.*)/, (req, res, next) => {
@@ -105,6 +113,8 @@ app.use((err, req, res, next) => {
   res.status(statusCode).render("./listing/error.ejs", { message });
 });
 
-app.listen(8080, () => {
-  console.log("listening at port 8080");
+// Render assigns the port via process.env.PORT - never hardcode it.
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log(`listening at port ${PORT}`);
 });
